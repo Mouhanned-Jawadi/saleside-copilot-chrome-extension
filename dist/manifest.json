@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "SaleSide Co-Pilot",
+  "version": "0.1.0",
+  "description": "A compact SaleSide copilot for login, live config, and AI coaching in Chrome.",
+  "action": {
+    "default_title": "SaleSide Co-Pilot",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.svg",
+      "48": "icon.svg",
+      "128": "icon.svg"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "options.html",
+  "permissions": ["storage", "tabs", "sidePanel"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "icons": {
+    "16": "icon.svg",
+    "48": "icon.svg",
+    "128": "icon.svg"
+  }
+}
