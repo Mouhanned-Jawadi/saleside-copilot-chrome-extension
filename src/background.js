@@ -2,6 +2,7 @@ import { clearAuthSnapshot, normalizeBaseUrl, readBackendBaseUrl, storageGet, st
 import { DEFAULT_BACKEND_BASE_URL, STORAGE_KEYS } from './shared/constants.js';
 
 let pendingGoogleAuthTabId = null;
+let macPopupWindowId = null;
 
 async function openGoogleAuthTab() {
   const baseUrl = await readBackendBaseUrl();
@@ -84,6 +85,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'saleside:clear-auth') {
     clearAuthSnapshot().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+
+  if (message.type === 'saleside:open-popup-window') {
+    (async () => {
+      // If the window is still open, just focus it.
+      if (macPopupWindowId !== null) {
+        try {
+          await chrome.windows.update(macPopupWindowId, { focused: true });
+          sendResponse({ ok: true });
+          return;
+        } catch {
+          macPopupWindowId = null;
+        }
+      }
+      try {
+        const win = await chrome.windows.create({
+          url: chrome.runtime.getURL('sidepanel.html'),
+          type: 'popup',
+          width: 460,
+          height: 780,
+          focused: true,
+        });
+        macPopupWindowId = win.id;
+        // Clear the tracked ID when the user closes the window.
+        chrome.windows.onRemoved.addListener(function onRemoved(removedId) {
+          if (removedId === macPopupWindowId) {
+            macPopupWindowId = null;
+            chrome.windows.onRemoved.removeListener(onRemoved);
+          }
+        });
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false, error: error.message });
+      }
+    })();
     return true;
   }
 

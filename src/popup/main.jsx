@@ -15,17 +15,9 @@ function Popup() {
   const openSidePanel = async () => {
     const isMac = navigator.platform.toLowerCase().startsWith('mac');
     if (isMac) {
-      // On macOS, chrome.sidePanel.open() must be called within a direct user-gesture
-      // context. Routing through the background service worker loses that context on Mac,
-      // so we call the API directly from the popup instead.
-      try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab?.id) {
-          await chrome.sidePanel.open({ tabId: tab.id });
-        }
-      } catch (e) {
-        console.error('SaleSide: failed to open side panel on macOS', e);
-      }
+      // macOS: chrome.sidePanel.open() is unreliable on Mac Chrome, so we open
+      // a floating popup window with the same UI instead.
+      await chrome.runtime.sendMessage({ type: 'saleside:open-popup-window' });
     } else {
       await chrome.runtime.sendMessage({ type: 'saleside:open-sidepanel' });
     }

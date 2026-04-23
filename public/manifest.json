@@ -20,7 +20,7 @@
     "type": "module"
   },
   "options_page": "options.html",
-  "permissions": ["storage", "tabs", "sidePanel"],
+  "permissions": ["storage", "tabs", "sidePanel", "windows"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "icons": {
     "16": "icon.svg",
