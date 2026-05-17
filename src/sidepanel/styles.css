@@ -423,6 +423,39 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ── Voice input ─────────────────────────────────────────── */
+
+.mic-button {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.mic-button--active {
+  background: rgba(255, 122, 144, 0.18);
+  border-color: rgba(255, 122, 144, 0.5);
+  animation: mic-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 144, 0.45); }
+  50%       { box-shadow: 0 0 0 10px rgba(255, 122, 144, 0); }
+}
+
+.voice-interim {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  padding: 2px 14px;
+  min-height: 18px;
+}
+
 @media (max-width: 420px) {
   .panel-shell {
     padding: 10px;

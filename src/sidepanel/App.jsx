@@ -57,7 +57,10 @@ function App() {
   const [chatLoading, setChatLoading] = useState(false);
   const [copilotSources, setCopilotSources] = useState(null);
   const [bootstrapReady, setBootstrapReady] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [interimText, setInterimText] = useState('');
   const scrollRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const assistantName = companyConfig?.assistant_name || 'SaleSide Co-Pilot';
   const companyName = companyConfig?.company_name || user?.organization?.name || 'Your workspace';
@@ -252,6 +255,62 @@ function App() {
     }
   };
 
+  const handleVoice = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setAuthError('Speech recognition is not supported in this browser.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setInterimText('');
+      setAuthError('');
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      setInterimText('');
+    };
+    recognition.onerror = (e) => {
+      setIsListening(false);
+      setInterimText('');
+      if (e.error === 'not-allowed') {
+        setAuthError(
+          'Microphone blocked. To fix: open a new Chrome tab, go to chrome://settings/content/microphone, find this extension under "Not allowed" and move it to "Allowed". Then reload the extension and try again.'
+        );
+      } else if (e.error !== 'no-speech') {
+        setAuthError(`Voice error: ${e.error}`);
+      }
+    };
+    recognition.onresult = (event) => {
+      let finalText = '';
+      let interim = '';
+      for (const result of event.results) {
+        if (result.isFinal) finalText += result[0].transcript;
+        else interim += result[0].transcript;
+      }
+      if (finalText) {
+        setMessage((prev) => (prev ? `${prev} ${finalText.trim()}` : finalText.trim()));
+        setInterimText('');
+      } else {
+        setInterimText(interim);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
   const handleClearConversation = async () => {
     if (!conversationId) {
       setMessages([COPILOT_WELCOME_MESSAGE]);
@@ -382,14 +441,25 @@ function App() {
             onChange={(event) => setMessage(event.target.value)}
             placeholder="Ask about pricing, objections, positioning, or the next best move..."
           />
-          <div className="composer-row">
-            <div className="prompt-row">
-              {DEFAULT_PROMPTS.map((prompt) => (
-                <button type="button" key={prompt} className="prompt-chip" onClick={(event) => handleSend(event, prompt)}>
-                  {prompt}
-                </button>
-              ))}
-            </div>
+          <div className="voice-interim" aria-live="polite">
+            {isListening ? interimText : ''}
+          </div>
+          <div className="prompt-row">
+            {DEFAULT_PROMPTS.map((prompt) => (
+              <button type="button" key={prompt} className="prompt-chip" onClick={(event) => handleSend(event, prompt)}>
+                {prompt}
+              </button>
+            ))}
+          </div>
+          <div className="composer-actions">
+            <button
+              type="button"
+              className={`icon-button mic-button${isListening ? ' mic-button--active' : ''}`}
+              onClick={handleVoice}
+              title={isListening ? 'Stop recording' : 'Start voice input'}
+            >
+              🎤
+            </button>
             <button type="submit" className="primary-button" disabled={chatLoading}>Send</button>
           </div>
         </form>
